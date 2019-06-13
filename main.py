@@ -16,7 +16,6 @@ train = tf.data.Dataset.from_tensor_slices(
     train_data).repeat().shuffle(10000).batch(64)
 test = tf.data.Dataset.from_tensors(test_data).repeat()
 
-
 handle = tf.placeholder(tf.string, [])
 itr = tf.data.Iterator.from_string_handle(
     handle, train.output_types, train.output_shapes)
@@ -35,6 +34,7 @@ labels = tf.cast(labels, tf.int32)
 
 
 class Model:
+
     def __init__(self, model_id: int, regularize=True):
         self.model_id = model_id
         self.name_scope = tf.get_default_graph().get_name_scope()
@@ -105,12 +105,12 @@ def create_model(*args, **kwargs):
         return Model(*args, **kwargs)
 
 
-ITERATIONS = 50_000
+ITERATIONS = 50000
 
 nonreg_accuracy_hist = np.zeros((ITERATIONS // 100,))
 model = create_model(0, regularize=False)
 
-gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=1.)
+gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.9)
 
 with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options,
                                       allow_soft_placement=True,
@@ -121,7 +121,7 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options,
 
     feed_dict = {handle: train_handle}
     test_feed_dict = {handle: test_handle}
-    for i in tqdm(range(ITERATIONS)):
+    for i in tqdm(range(ITERATIONS), desc="Training"):
         # Training
         sess.run(model.optimize, feed_dict)
         # Evaluate
@@ -150,7 +150,7 @@ with tf.Session() as sess:
 
     feed_dict = {handle: train_handle}
     test_feed_dict = {handle: test_handle}
-    for i in tqdm(range(POPULATION_STEPS), desc='PBT'):
+    for i in tqdm(range(POPULATION_STEPS), desc="PBT"):
         # Copy best
         sess.run([m.copy_from(models[0]) for m in models[-WORST_THRES:]])
         # Perturb others
@@ -168,3 +168,20 @@ with tf.Session() as sess:
         for m in models:
             l1_scale_hist[m.model_id, i] = l1_scales[m]
             accuracy_hist[m.model_id, i] = accuracies[m]
+
+
+f = plt.figure(figsize=(10, 5))
+ax = f.add_subplot(1, 1, 1)
+ax.plot(best_accuracy_hist)
+ax.plot(nonreg_accuracy_hist, c='red')
+ax.set(xlabel='Hundreds of training iterations', ylabel='Test accuracy')
+ax.legend(['Population based training', 'Non-regularized baseline'])
+plt.show()
+
+
+f = plt.figure(figsize=(10, 5))
+ax = f.add_subplot(1, 1, 1)
+ax.plot(2 ** l1_scale_hist.T)
+ax.set_yscale('log')
+ax.set(xlabel='Hundreds of training iterations', ylabel='L1 regularizer scale')
+plt.show()
