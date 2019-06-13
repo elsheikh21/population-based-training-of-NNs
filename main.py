@@ -1,12 +1,15 @@
+import os
+from functools import lru_cache
+
+import matplotlib.pyplot as plt
+import numpy as np
+import observations
 import tensorflow as tf
 import tensorflow.contrib as tfc
-import numpy as np
-import matplotlib.pyplot as plt
-import observations
-from functools import lru_cache
 from tqdm import tqdm
 
 
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 tf.reset_default_graph()
 
 train_data, test_data = observations.cifar10('data/cifar',)
