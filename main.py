@@ -141,9 +141,12 @@ l1_scale_hist = np.zeros((POPULATION_SIZE, POPULATION_STEPS))
 best_accuracy_hist = np.zeros((POPULATION_STEPS,))
 best_l1_scale_hist = np.zeros((POPULATION_STEPS,))
 
-models = [create_model(i) for i in range(POPULATION_SIZE)]
+models = [create_model(i) for i in tqdm(
+    range(POPULATION_SIZE), desc="Creating models")]
 
-with tf.Session() as sess:
+with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options,
+                                      allow_soft_placement=True,
+                                      log_device_placement=True)) as sess:
     train_handle = make_handle(sess, train)
     test_handle = make_handle(sess, test)
     sess.run(tf.global_variables_initializer())
@@ -156,7 +159,7 @@ with tf.Session() as sess:
         # Perturb others
         sess.run([m.perturb for m in models[BEST_THRES:]])
         # Training
-        for _ in range(ITERATIONS):
+        for _ in tqdm(range(ITERATIONS), desc="Training"):
             sess.run([m.optimize for m in models], feed_dict)
         # Evaluate
         l1_scales = sess.run({m: m.l1_scale for m in models})

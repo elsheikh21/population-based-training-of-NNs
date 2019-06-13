@@ -7,7 +7,6 @@ __pycache__/
 *.so
 
 # Distribution / packaging
-.sonarlint
 .Python
 build/
 develop-eggs/
@@ -103,3 +102,9 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# Linting related
+.sonarlint
+
+# Resources
+data
