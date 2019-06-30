@@ -106,5 +106,8 @@ venv.bak/
 # Linting related
 .sonarlint
 
+# vscode related
+.vscode
+
 # Resources
 data

@@ -1,28 +1,18 @@
-import os
 from functools import lru_cache
-
-import matplotlib.pyplot as plt
-import numpy as np
-import observations
-import tensorflow as tf
 import tensorflow.contrib as tfc
+import os
+
+import numpy as np
+import tensorflow as tf
 from tqdm import tqdm
 
+from dataset_handler import load_data
+from plotting import plot
 
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 tf.reset_default_graph()
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
-train_data, test_data = observations.cifar10('data/cifar',)
-test_data = test_data[0], test_data[1].astype(np.uint8)  # Fix test_data dtype
-
-train = tf.data.Dataset.from_tensor_slices(
-    train_data).repeat().shuffle(10000).batch(64)
-test = tf.data.Dataset.from_tensors(test_data).repeat()
-
-handle = tf.placeholder(tf.string, [])
-itr = tf.data.Iterator.from_string_handle(
-    handle, train.output_types, train.output_shapes)
-inputs, labels = itr.get_next()
+train, test, handle, inputs, labels = load_data()
 
 
 def make_handle(sess, dataset):
@@ -50,7 +40,7 @@ class Model:
 
         # Network and loglikelihood
         logits = self._create_network(l1_reg)
-        # We maximixe the loglikelihood of the data as a training objective
+        # We maximize the loglikelihood of the data as a training objective
         distr = tf.distributions.Categorical(logits)
         loglikelihood = distr.log_prob(labels)
 
@@ -64,12 +54,15 @@ class Model:
         # Retrieve all weights and hyper-parameter variables of this model
         trainable = tf.get_collection(
             tf.GraphKeys.TRAINABLE_VARIABLES, self.name_scope + '/')
-        # The loss to optimize is the negative loglikelihood + the l1-regularizer
+        # The loss to optimize is the negative loglikelihood
+        # + the l1-regularizer
         reg_loss = self.loss + tf.losses.get_regularization_loss()
-        self.optimize = tf.train.AdamOptimizer().minimize(reg_loss, var_list=trainable)
+        self.optimize = tf.train.AdamOptimizer().minimize(reg_loss,
+                                                          var_list=trainable)
 
     def _create_network(self, l1_reg):
-        # Our deep neural network will have two hidden layers with plenty of units
+        # Our deep neural network will have two hidden layers with
+        # plenty of units
         hidden = tf.layers.dense(inputs, 1024, activation=tf.nn.relu,
                                  kernel_regularizer=l1_reg)
         hidden = tf.layers.dense(hidden, 1024, activation=tf.nn.relu,
@@ -80,11 +73,16 @@ class Model:
 
     def _create_regularizer(self):
         # We will define the l1 regularizer scale in log2 space
-        # This allows changing one unit to half or double the effective l1 scale
-        self.l1_scale = tf.get_variable('l1_scale', [], tf.float32, trainable=False,
+        # This allows changing one unit to half or
+        # double the effective l1 scale
+        self.l1_scale = tf.get_variable('l1_scale',
+                                        [],
+                                        tf.float32,
+                                        trainable=False,
                                         initializer=tf.constant_initializer(np.log2(1e-5)))
-        # We define a 'pertub' operation that adds some noise to our regularizer scale
-        # We will use this pertubation during exploration in our population based training
+        # We define a 'perturb' operation that adds some noise
+        # to our regularizer scale. We will use this perturbation
+        # during exploration in our population based training
         noise = tf.random_normal([], stddev=0.5)
         self.perturb = self.l1_scale.assign_add(noise)
 
@@ -92,8 +90,8 @@ class Model:
 
     @lru_cache(maxsize=None)
     def copy_from(self, other_model):
-        # This method is used for exploitation. We copy all weights and hyper-parameters
-        # from other_model to this model
+        # This method is used for exploitation. We copy all weights
+        # and hyper-parameters, from other_model to this model
         my_weights = tf.get_collection(
             tf.GraphKeys.GLOBAL_VARIABLES, self.name_scope + '/')
         their_weights = tf.get_collection(
@@ -108,10 +106,10 @@ def create_model(*args, **kwargs):
         return Model(*args, **kwargs)
 
 
-ITERATIONS = 50000
+ITERATIONS = 50_000
 
 nonreg_accuracy_hist = np.zeros((ITERATIONS // 100,))
-model = create_model(0, regularize=False)
+mdl = create_model(0, regularize=False)
 
 gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.9)
 
@@ -126,11 +124,12 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options,
     test_feed_dict = {handle: test_handle}
     for i in tqdm(range(ITERATIONS), desc="Training"):
         # Training
-        sess.run(model.optimize, feed_dict)
+        sess.run(mdl.optimize, feed_dict)
         # Evaluate
         if i % 100 == 0:
             nonreg_accuracy_hist[i //
-                                 100] = sess.run(model.accuracy, test_feed_dict)
+                                 100] = sess.run(mdl.accuracy,
+                                                 test_feed_dict)
 
 
 POPULATION_SIZE = 10
@@ -176,20 +175,4 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options,
             accuracy_hist[m.model_id, i] = accuracies[m]
 
 
-f = plt.figure(figsize=(10, 5))
-ax = f.add_subplot(1, 1, 1)
-ax.plot(best_accuracy_hist)
-ax.plot(nonreg_accuracy_hist, c='red')
-ax.set(xlabel='Hundreds of training iterations', ylabel='Test accuracy')
-ax.legend(['Population based training', 'Non-regularized baseline'])
-plt.savefig('100s.png')
-plt.show()
-
-
-f = plt.figure(figsize=(10, 5))
-ax = f.add_subplot(1, 1, 1)
-ax.plot(2 ** l1_scale_hist.T)
-ax.set_yscale('log')
-ax.set(xlabel='Hundreds of training iterations', ylabel='L1 regularizer scale')
-plt.savefig('scale_100s.png')
-plt.show()
+plot(best_accuracy_hist, nonreg_accuracy_hist, l1_scale_hist)
