@@ -1,3 +1,5 @@
+# http://louiskirsch.com/ai/population-based-training
+
 from functools import lru_cache
 import tensorflow.contrib as tfc
 import os
