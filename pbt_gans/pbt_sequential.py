@@ -40,7 +40,7 @@ def main(_):
     lib.print_model_settings(locals().copy())
     gpu_options = tf.GPUOptions(allow_growth=True)
 
-    num_workers = 20
+    num_workers = 5
     graph_list = []
     sess_list = []
     gan_list = []
