@@ -34,7 +34,7 @@ def load_cifar10(dataset, num_training=49000, num_validation=1000, num_test=1000
     it for the neural net classifier.
     '''
     # Load the raw CIFAR-10 data
-    X_train, y_train, X_test, y_test = load(os.path.join('dataset', 'cifar-10-batches-py'))
+    X_train, y_train, X_test, y_test = load(os.path.join(os.getcwd(), 'pbt_gans', 'data'))
 
     # Subsample the data
     mask = range(num_training, num_training + num_validation)
@@ -78,7 +78,7 @@ def load_CIFAR_batch(filename):
     ''' load single batch of cifar '''
     with open(filename, 'rb') as f:
         # unpickle a python2 object in python3
-        datadict = pickle.load(f) #, encoding='latin1')
+        datadict = pickle.load(f, encoding='latin1')
         X = datadict['data']
         Y = datadict['labels']
         X = X.reshape(10000, 3, 32, 32).transpose(0, 2, 3, 1).astype("float")

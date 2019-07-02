@@ -7,7 +7,7 @@ import _pickle as pickle
 
 def unpickle(file):
     fo = open(file, 'rb')
-    dict = pickle.load(fo)
+    dict = pickle.load(fo, encoding='latin1')
     fo.close()
     return dict['data'], dict['labels']
 
@@ -15,7 +15,7 @@ def cifar_generator(filenames, batch_size, data_dir):
     all_data = []
     all_labels = []
     for filename in filenames:        
-        data, labels = unpickle(data_dir + '/' + filename)
+        data, labels = unpickle(os.path.join(data_dir,  filename))
         all_data.append(data)
         all_labels.append(labels)
 
