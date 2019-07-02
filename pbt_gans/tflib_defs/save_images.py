@@ -32,7 +32,7 @@ def save_images(X, save_path):
 
     for n, x in enumerate(X):
         j = int(n/nw)
-        i = n%nw
+        i = int(n%nw)
         img[j*h:j*h+h, i*w:i*w+w] = x
 
     imsave(save_path, img)
