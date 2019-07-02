@@ -497,8 +497,9 @@ class GAN(object):
     def generate_image(self, frame, true_dist):
         samples = self.mon_sess.run(self.fake_images)
         samples = ((samples+1.)*(255./2)).astype('int32')
+        img_path = os.path.join(os.getcwd(), 'pbt_gans', 'images', f'{self.worker_idx}', f'samples_{frame}.jpg')
         lib.save_images.save_images(samples.reshape(
-            (-1, 3, 32, 32)), 'images/{}/samples_{}.jpg'.format(self.worker_idx, frame))
+            (-1, 3, 32, 32)), img_path)
 
     def init_inception(self):
         return init_inception(self)
