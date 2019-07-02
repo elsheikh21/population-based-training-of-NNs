@@ -305,7 +305,7 @@ class GAN(object):
         self.writer.add_summary(summary_str, self.counter)
 
         # Train critic
-        _data = self.gen.next()
+        _data = self.gen.__next__()
         _disc_cost, _, summary_str = self.mon_sess.run(
             [self.disc_cost, self.disc_train_op, self.d_sum], feed_dict={self.real_data_int: _data})
         self.writer.add_summary(summary_str, self.counter)
