@@ -258,14 +258,14 @@ class GAN(object):
         self.mon_sess.run(tf.initialize_all_variables())
         gen = inf_train_gen()
 
-        for iteration in xrange(100000):
+        for iteration in range(100000):
             start_time = time.time()
             # Train generator
             if iteration > 0:
                 _ = self.mon_sess.run(self.gen_train_op)
             # Train critic
             disc_iters = 1
-            for i in xrange(disc_iters):
+            for i in range(disc_iters):
                 _data = gen.next()
                 _disc_cost, _ = self.mon_sess.run(
                     [self.disc_cost, self.disc_train_op], feed_dict={self.real_data_int: _data})
@@ -505,7 +505,7 @@ class GAN(object):
 
     def get_inception_score(self):
         all_samples = []
-        for i in xrange(10):
+        for i in range(10):
             all_samples.append(self.mon_sess.run(self.samples_100))
         all_samples = np.concatenate(all_samples, axis=0)
         all_samples = ((all_samples+1.)*(255./2)).astype('int32')

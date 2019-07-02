@@ -8,7 +8,7 @@ import pprint
 import scipy.misc
 import numpy as np
 from time import gmtime, strftime
-from six.moves import xrange
+from six.moves import range
 import os, gzip
 
 import matplotlib
