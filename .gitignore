@@ -115,6 +115,5 @@ data
 
 logs/
 pbt_gans/checkpoint
-pbt_gans/images
 pbt_gans/logs/*
 
