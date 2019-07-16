@@ -10,6 +10,10 @@ from train_utils import batch_generator
 
 
 class PbtOptimizer:
+    '''
+    PbtOptimizer class creates members based on given population_size
+    with given dictionary of parameters    
+    '''
 
     def __init__(self, build_member: Callable,
                  population_size: int,
@@ -55,7 +59,8 @@ class PbtOptimizer:
 
         results = pd.concat([pd.DataFrame(v).assign(member=k)
                              for k, v in results.items()])
-        best_model = self.population[np.array([m.eval_metric_mean() for m in self.population]).argmax()].model
+        best_model = self.population[np.array(
+            [m.eval_metric_mean() for m in self.population]).argmax()].model
 
         return best_model, results
 
