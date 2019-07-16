@@ -80,6 +80,15 @@ algorithms.
 ![PBT Pseudo Code](report_related/algorithm.png)
 
 ---
+## PBT Different Tasks
+
+- Implemented for image generation using GANs "pbt_gans"
+- Implemented for Image Classification "pbt_img_classification"
+- Implemented for Neural Machine Translation "pbt_nmt"
+- Implemented for Deep Reinforcement Learning "pbt_drl"
+
+
+---
 
 ## References
 
