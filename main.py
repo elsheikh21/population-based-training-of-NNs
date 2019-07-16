@@ -162,7 +162,7 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options,
 
 # Population Based Training
 # Creating a population of 10 Networks,
-# assign best and worst percentiles to 30% 
+# assign best and worst percentiles to 30%
 # Each will perform 500 steps each iteration for 100 iterations
 POPULATION_SIZE = 10
 BEST_THRES = 3
@@ -180,6 +180,7 @@ best_l1_scale_hist = np.zeros((POPULATION_STEPS,))
 # Each model is created
 models = [create_model(i) for i in tqdm(
     range(POPULATION_SIZE), desc="Creating models")]
+
 
 with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options,
                                       allow_soft_placement=True,
@@ -208,6 +209,5 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options,
         for m in models:
             l1_scale_hist[m.model_id, i] = l1_scales[m]
             accuracy_hist[m.model_id, i] = accuracies[m]
-
 
 plot(best_accuracy_hist, nonreg_accuracy_hist, l1_scale_hist)
