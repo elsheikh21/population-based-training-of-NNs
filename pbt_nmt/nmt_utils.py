@@ -6,6 +6,9 @@ from metrics import bleu_score
 
 
 def nmt_train_generator(src, tar, tar_vocab_size, batch_size=64, shuffle=True, looping=True):
+    '''
+    Generates sentences for the model training
+    '''
     indices = np.arange(len(src))
 
     while True:
@@ -25,6 +28,7 @@ def nmt_train_generator(src, tar, tar_vocab_size, batch_size=64, shuffle=True, l
 
 
 def nmt_infer_generator(src, tar, batch_size=64):
+    ''' Yields sentences of en and de '''
     indices = np.arange(len(src))
 
     for idx in range(0, indices.shape[0] - batch_size + 1, batch_size):
@@ -33,6 +37,10 @@ def nmt_infer_generator(src, tar, batch_size=64):
 
 
 def nmt_infer(encoder, decoder, inputs):
+    '''
+    Gets the output of both the encoder and decoder to fetch the corresponding
+    translation
+    '''
     preds = np.full((inputs.shape[1], inputs.shape[0]), Tokenizer.PAD, dtype=np.int32)
     decoder_inputs = np.full(inputs.shape[0], Tokenizer.BOS)
 
@@ -58,6 +66,13 @@ def nmt_infer(encoder, decoder, inputs):
 
 
 def bleu_score_enc_dec(encoder, decoder, src, tar, batch_size=64):
+    '''
+    Computes bleu score for the encoder and decoder outputs
+    by creating a numpy array of zeros as per the generator of
+    NMT inference which basically computes whether the RNNs gave
+    out the best translation or not.
+     
+    '''
     n_batches = src.shape[0] // batch_size
     pred = np.zeros((batch_size * n_batches, tar.shape[1]), dtype=np.int32)
     for b, (s, _) in enumerate(nmt_infer_generator(src, tar, batch_size)):

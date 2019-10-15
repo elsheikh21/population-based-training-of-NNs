@@ -81,6 +81,15 @@ algorithms.
 
 ---
 
+## PBT Different Tasks
+
+- Implemented for image generation using GANs [PBT_GANS](https://github.com/elsheikh21/population-based-training-of-NNs/tree/master/pbt_gans)
+- Implemented for Image Classification [PBT_Images_Classification](https://github.com/elsheikh21/population-based-training-of-NNs/tree/master/pbt_img_classification)
+- Implemented for Neural Machine Translation [PBT_NMT](https://github.com/elsheikh21/population-based-training-of-NNs/tree/master/pbt_nmt)
+- Implemented for Deep Reinforcement Learning [PBT_DRL](https://github.com/elsheikh21/population-based-training-of-NNs/tree/master/pbt_drl)
+
+---
+
 ## References
 
 1. [Population Based Training of NN paper- arxiv](https://arxiv.org/abs/1711.09846)

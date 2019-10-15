@@ -1,5 +1,3 @@
-# http://louiskirsch.com/ai/population-based-training
-
 from functools import lru_cache
 import tensorflow.contrib as tfc
 import os
@@ -18,17 +16,41 @@ train, test, handle, inputs, labels = load_data()
 
 
 def make_handle(sess, dataset):
+    # To enumerate through the dataset, it will return an uninitialized iterator
     iterator = dataset.make_initializable_iterator()
+
     handle, _ = sess.run([iterator.string_handle(), iterator.initializer])
     return handle
 
 
+# normalize the inputs and flatten them
 inputs = tf.cast(inputs, tf.float32) / 255.0
 inputs = tf.layers.flatten(inputs)
+# cast labels to integers each representing a class
 labels = tf.cast(labels, tf.int32)
 
 
 class Model:
+    """
+    Creating a model with a given id and name scope to be able
+    to debug the graph later.
+    All models are created with a regularizer by default
+
+    Models are formed of 2 dense layer 1024 units each, RELU activation,
+    and the last layer consists of 10 units representing 10 classes,
+    all are regularized using L1 Regularizer.
+    We take the probability distributions produced by the logits layer,
+    transform them to categorical to get likelihood of each class.
+    And compute accuracy, and loss add to it the regularizer loss and optimize
+    that using Adam optimizer
+
+    L1 Regularizer is created to change one unit to its half or double the
+    effective scale
+
+    PBT part, it is implemented to add noise of uniform random distribution of
+    mean 0.0 and standard deviation of 0.5
+
+    """
 
     def __init__(self, model_id: int, regularize=True):
         self.model_id = model_id
@@ -92,8 +114,10 @@ class Model:
 
     @lru_cache(maxsize=None)
     def copy_from(self, other_model):
-        # This method is used for exploitation. We copy all weights
-        # and hyper-parameters, from other_model to this model
+        '''
+        This method is used for exploitation. We copy all weights
+        and hyper-parameters, from other_model to this model
+        '''
         my_weights = tf.get_collection(
             tf.GraphKeys.GLOBAL_VARIABLES, self.name_scope + '/')
         their_weights = tf.get_collection(
@@ -108,11 +132,14 @@ def create_model(*args, **kwargs):
         return Model(*args, **kwargs)
 
 
+# Iterate for 50K epochs
 ITERATIONS = 50_000
 
+# Creating a list of accuracy, all are assigned to zeros for simplicity
 nonreg_accuracy_hist = np.zeros((ITERATIONS // 100,))
 mdl = create_model(0, regularize=False)
 
+# configuring GPU options
 gpu_options = tf.GPUOptions(per_process_gpu_memory_fraction=0.9)
 
 with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options,
@@ -133,20 +160,27 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options,
                                  100] = sess.run(mdl.accuracy,
                                                  test_feed_dict)
 
-
+# Population Based Training
+# Creating a population of 10 Networks,
+# assign best and worst percentiles to 30%
+# Each will perform 500 steps each iteration for 100 iterations
 POPULATION_SIZE = 10
 BEST_THRES = 3
 WORST_THRES = 3
 POPULATION_STEPS = 500
 ITERATIONS = 100
 
+# Creating lists for holding data for plotting later
 accuracy_hist = np.zeros((POPULATION_SIZE, POPULATION_STEPS))
 l1_scale_hist = np.zeros((POPULATION_SIZE, POPULATION_STEPS))
+
 best_accuracy_hist = np.zeros((POPULATION_STEPS,))
 best_l1_scale_hist = np.zeros((POPULATION_STEPS,))
 
+# Each model is created
 models = [create_model(i) for i in tqdm(
     range(POPULATION_SIZE), desc="Creating models")]
+
 
 with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options,
                                       allow_soft_placement=True,
@@ -175,6 +209,5 @@ with tf.Session(config=tf.ConfigProto(gpu_options=gpu_options,
         for m in models:
             l1_scale_hist[m.model_id, i] = l1_scales[m]
             accuracy_hist[m.model_id, i] = accuracies[m]
-
 
 plot(best_accuracy_hist, nonreg_accuracy_hist, l1_scale_hist)

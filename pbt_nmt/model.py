@@ -6,12 +6,20 @@ from hyperparameters import DropoutHP
 
 def define_nmt(hidden_size, embedding_size, timesteps, src_vocab_size, tar_vocab_size,
                dropout, lr):
+    '''
+    Builds Basic Encoder Decoder model by setting up embedding layers,
+    GRU cells for both networks as well as defining Dense layer.
+    Defining encoder inputs in terms of the timesteps,
+    and decoder of time-steps - 1,
+    Decoder uses the output of the encoder as well as its states,
+    to create our model we have the encoder & decoder inputs as our models input '''
     # layers with parameters
     encoder_emb = Embedding(src_vocab_size, embedding_size)
     encoder_gru = GRU(hidden_size, return_sequences=True, return_state=True)
     decoder_emb = Embedding(tar_vocab_size, embedding_size)
     decoder_gru = GRU(hidden_size, return_sequences=True, return_state=True)
     decoder_tan = Dense(hidden_size, activation="tanh")
+    # Here we change the dropout rate
     decoder_drop = DropoutHP(rate=dropout)
     decoder_softmax = Dense(tar_vocab_size, activation='softmax')
 
@@ -22,7 +30,8 @@ def define_nmt(hidden_size, embedding_size, timesteps, src_vocab_size, tar_vocab
 
     def define_decoder(decoder_inputs, encoder_states, decoder_init_state):
         decoder_embed = decoder_emb(decoder_inputs)
-        decoder_out, decoder_state = decoder_gru(decoder_embed, initial_state=decoder_init_state)
+        decoder_out, decoder_state = decoder_gru(
+            decoder_embed, initial_state=decoder_init_state)
         attention = dot([decoder_out, encoder_states], axes=[2, 2])
         attention = Activation('softmax')(attention)
         context = dot([attention, encoder_states], axes=[2, 1])
@@ -36,25 +45,30 @@ def define_nmt(hidden_size, embedding_size, timesteps, src_vocab_size, tar_vocab
     encoder_inputs = Input(shape=(timesteps,))
     decoder_inputs = Input(shape=(timesteps - 1,))
     encoder_out, encoder_state = define_encoder(encoder_inputs)
-    decoder_pred, _ = define_decoder(decoder_inputs, encoder_out, encoder_state)
-    model = Model(inputs=[encoder_inputs, decoder_inputs], outputs=decoder_pred)
+    decoder_pred, _ = define_decoder(
+        decoder_inputs, encoder_out, encoder_state)
+    model = Model(inputs=[encoder_inputs, decoder_inputs],
+                  outputs=decoder_pred)
     optimizer = keras.optimizers.Adam(lr=lr)
     model.compile(optimizer=optimizer, loss='categorical_crossentropy')
 
     # encoder inference model
     encoder_inf_inputs = Input(shape=(timesteps,))
     encoder_inf_out, encoder_inf_state = define_encoder(encoder_inf_inputs)
-    encoder_model = Model(inputs=encoder_inf_inputs, outputs=[encoder_inf_out, encoder_inf_state])
+    encoder_model = Model(inputs=encoder_inf_inputs, outputs=[
+                          encoder_inf_out, encoder_inf_state])
 
     # decoder inference model
     encoder_inf_states = Input(shape=(timesteps, hidden_size,))
     decoder_init_state = Input(shape=(hidden_size,))
     decoder_inf_inputs = Input(shape=(1,))
-    decoder_inf_pred, decoder_inf_state = define_decoder(decoder_inf_inputs, encoder_inf_states, decoder_init_state)
+    decoder_inf_pred, decoder_inf_state = define_decoder(
+        decoder_inf_inputs, encoder_inf_states, decoder_init_state)
     decoder_model = Model(inputs=[encoder_inf_states, decoder_init_state, decoder_inf_inputs],
                           outputs=[decoder_inf_pred, decoder_inf_state])
 
     return model, encoder_model, decoder_model
+
 
 '''
 class NMT(keras.Model):
